@@ -1,0 +1,24 @@
+{
+  "type": "record",
+  "namespace": "com.sd.kafka.avro",
+  "name": "ActingEvent",
+  "fields": [
+    {
+      "name": "actor",
+      "type": "string"
+    },
+    {
+      "name": "genre",
+      "type": "string"
+    },
+    {
+      "name": "title",
+      "type": "string"
+    },
+    {
+      "name": "timestamp",
+      "type": "long",
+      "logicalType": "timestamp-millis"
+    }
+  ]
+}
