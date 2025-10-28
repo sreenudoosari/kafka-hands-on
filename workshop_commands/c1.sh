@@ -32,6 +32,32 @@ docker exec -it kafka-1 bash
 #With SSL:
 /usr/bin/kafka-topics  --list --bootstrap-server kafka-1:9092 --command-config /etc/kafka/client-ssl.properties
 
+#Check segments
+
+docker exec -it kafka-1 bash
+
+cd /var/lib/kafka/data/test-topic-0
+
+ /usr/bin/kafka-dump-log  --print-data-log  --files 00000000000000000000.log
+
+| File                      | Role         | Key idea                       |
+| ------------------------- | ------------ | ------------------------------ |
+| `*.log`                   | Data segment | Actual messages                |
+| `*.index`                 | Offset index | Offset → position              |
+| `*.timeindex`             | Time index   | Timestamp → offset             |
+| `leader-epoch-checkpoint` | Metadata     | Leader history for replication |
+
+leader-epoch-checkpoint
+It maps epoch → starting offset, so followers can catch up to the correct position.
+Example content
+0 0
+1 150
+2 300
+→ The third leader (epoch 2) began at offset 300.
+
+Purpose:
+Ensures consistency between replicas by recognizing which leader’s log is the latest.
+
 
 | Property              | Description                       | Default       |
 | --------------------- | --------------------------------- | ------------- |
