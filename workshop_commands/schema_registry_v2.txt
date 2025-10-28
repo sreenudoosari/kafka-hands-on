@@ -1,0 +1,176 @@
+🧪 KAFKA SCHEMA REGISTRY DEMO SCRIPT
+0. Environment check
+# Verify Kafka and Schema Registry are up
+docker ps | grep schema-registry
+curl -s http://localhost:8081/config | jq .
+
+# List registered subjects (should be empty initially)
+curl -s http://localhost:8081/subjects
+
+1. Register base schema (V1)
+cat > user_v1.avsc <<EOF
+{
+  "namespace": "com.sd.kafka.avro",
+  "type": "record",
+  "name": "User",
+  "fields": [
+    {"name": "name", "type": "string"},
+    {"name": "address", "type": "string"},
+    {"name": "user_id", "type": "string"},
+    {"name": "country", "type": "string", "default": "undefined"},
+    {"name": "phone", "type": "string"}
+  ]
+}
+EOF
+
+# Register schema v1 manually (optional — producer does it automatically)
+curl -X POST http://localhost:8081/subjects/users-avro-value/versions \
+  -H "Content-Type: application/vnd.schemaregistry.v1+json" \
+  -d '{"schema": "'"$(cat user_v1.avsc | jq -c .)"'"}'
+
+# Confirm registration
+curl -s http://localhost:8081/subjects/users-avro-value/versions | jq .
+curl -s http://localhost:8081/subjects/users-avro-value/versions/latest | jq .
+
+
+Run your producer and consumer once to verify the base setup works.
+
+2. Set compatibility mode to BACKWARD
+curl -X PUT http://localhost:8081/config/users-avro-value \
+  -H "Content-Type: application/json" \
+  -d '{"compatibility": "BACKWARD"}'
+
+# Check it
+curl -s http://localhost:8081/config/users-avro-value | jq .
+
+3. Create backward-compatible schema (V2)
+cat > user_v2.avsc <<EOF
+{
+  "namespace": "com.sd.kafka.avro",
+  "type": "record",
+  "name": "User",
+  "fields": [
+    {"name": "name", "type": "string"},
+    {"name": "address", "type": "string"},
+    {"name": "user_id", "type": "string"},
+    {"name": "country", "type": "string", "default": "undefined"},
+    {"name": "phone", "type": "string"},
+    {"name": "email", "type": "string", "default": ""}
+  ]
+}
+EOF
+
+# Check compatibility
+curl -X POST http://localhost:8081/compatibility/subjects/users-avro-value/versions/latest \
+  -H "Content-Type: application/vnd.schemaregistry.v1+json" \
+  -d '{"schema": "'"$(cat user_v2.avsc | jq -c .)"'"}'
+
+# Register schema V2
+curl -X POST http://localhost:8081/subjects/users-avro-value/versions \
+  -H "Content-Type: application/vnd.schemaregistry.v1+json" \
+  -d '{"schema": "'"$(cat user_v2.avsc | jq -c .)"'"}'
+
+
+Expected output:
+
+{"is_compatible":true}
+
+4. Backward compatibility demo
+Run producer (V2)
+mvn compile exec:java -Dexec.mainClass=com.sd.kafka.schema_registry.UserProducer
+
+Run consumer (V1)
+mvn compile exec:java -Dexec.mainClass=com.sd.kafka.schema_registry.UserConsumer
+
+
+Expected output (consumer):
+
+Consumed record key=u003 value={"name": "Alice3", "address": "123 Main Street", "user_id": "u003", "country": "FR", "phone": "123"}
+
+
+Notice: email field not visible → ignored by old schema.
+✅ Backward compatibility confirmed.
+
+5. Set compatibility mode to FORWARD
+curl -X PUT http://localhost:8081/config/users-avro-value \
+  -H "Content-Type: application/json" \
+  -d '{"compatibility": "FORWARD"}'
+curl -s http://localhost:8081/config/users-avro-value | jq .
+
+6. Forward compatibility demo
+
+Old producer (V1) writes messages → new consumer (V2) reads them.
+
+Run producer (V1)
+mvn compile exec:java -Dexec.mainClass=com.sd.kafka.schema_registry.UserProducer
+
+Run consumer (V2)
+mvn compile exec:java -Dexec.mainClass=com.sd.kafka.schema_registry.UserConsumer
+
+
+Expected consumer output:
+
+Consumed record key=u0012 value={"name": "Alice2", "address": "123 Main Street", "user_id": "u0012", "country": "FR", "phone": "123", "email": ""}
+
+
+Notice: email present but empty → filled by default.
+✅ Forward compatibility confirmed.
+
+7. Breaking schema demo (incompatible V3)
+cat > user_v3.avsc <<EOF
+{
+  "namespace": "com.sd.kafka.avro",
+  "type": "record",
+  "name": "User",
+  "fields": [
+    {"name": "name", "type": "string"},
+    {"name": "address", "type": "string"},
+    {"name": "user_id", "type": "int"},
+    {"name": "country", "type": "string", "default": "undefined"},
+    {"name": "phone", "type": "string"}
+  ]
+}
+EOF
+
+# Test compatibility
+curl -X POST http://localhost:8081/compatibility/subjects/users-avro-value/versions/latest \
+  -H "Content-Type: application/vnd.schemaregistry.v1+json" \
+  -d '{"schema": "'"$(cat user_v3.avsc | jq -c .)"'"}'
+
+
+Expected output:
+
+{"is_compatible":false}
+
+
+If you attempt to register it:
+
+curl -X POST http://localhost:8081/subjects/users-avro-value/versions \
+  -H "Content-Type: application/vnd.schemaregistry.v1+json" \
+  -d '{"schema": "'"$(cat user_v3.avsc | jq -c .)"'"}'
+
+
+Schema Registry rejects it.
+
+❌ Breaking change detected.
+
+8. Show all schema versions
+curl -s http://localhost:8081/subjects/users-avro-value/versions | jq .
+
+
+Example output:
+
+[1, 2]
+
+
+Then inspect details:
+
+curl -s http://localhost:8081/subjects/users-avro-value/versions/1 | jq .
+curl -s http://localhost:8081/subjects/users-avro-value/versions/2 | jq .
+
+✅ Summary  (end of demo)
+Step	Change	Mode	Result
+Add field with default	BACKWARD	✅ Works
+Old consumer reads new messages	BACKWARD	✅ Works
+New consumer reads old messages	FORWARD	✅ Works
+Change field type	any	❌ Rejected

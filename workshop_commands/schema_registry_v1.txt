@@ -1,0 +1,179 @@
+All commands assume Confluent Platform is running locally:
+
+Kafka broker: localhost:19092
+
+Schema Registry: http://localhost:8081
+
+Topic: users-avro
+
+⚙️ Step 0 — Setup
+
+Ensure Schema Registry and Kafka are running.
+
+Verify schema registry connectivity:
+
+curl http://localhost:8081/subjects
+
+
+Compile Avro schema and run your producer once to register the first version.
+
+After that, check the registered schema:
+
+curl http://localhost:8081/subjects/users-avro-value/versions/latest | jq .
+
+🧩 Step 1 — Version 1 (Base Schema)
+
+user_v1.avsc
+
+{
+  "namespace": "com.sd.kafka.avro",
+  "type": "record",
+  "name": "User",
+  "fields": [
+    {"name": "name", "type": "string"},
+    {"name": "address", "type": "string"},
+    {"name": "user_id", "type": "string"},
+    {"name": "country", "type": "string", "default": "undefined"},
+    {"name": "phone", "type": "string"}
+  ]
+}
+
+
+Compile this schema (via your Avro plugin or avro-tools) to generate User.java.
+
+Run your existing UserProducer and UserConsumer to verify the topic works:
+
+mvn compile exec:java -Dexec.mainClass=com.sd.kafka.schema_registry.UserProducer
+mvn compile exec:java -Dexec.mainClass=com.sd.kafka.schema_registry.UserConsumer
+
+
+Output should show your two user records consumed successfully.
+
+🧪 Step 2 — Demonstrate Backward Compatibility
+Goal:
+
+New producer (V2) sends messages with an extra field.
+Old consumer (V1) still reads them fine.
+
+2.1. Configure compatibility mode
+
+Set schema registry to BACKWARD:
+
+curl -X PUT http://localhost:8081/config/users-avro-value \
+  -H "Content-Type: application/json" \
+  -d '{"compatibility": "BACKWARD"}'
+
+2.2. Create user_v2.avsc
+{
+  "namespace": "com.sd.kafka.avro",
+  "type": "record",
+  "name": "User",
+  "fields": [
+    {"name": "name", "type": "string"},
+    {"name": "address", "type": "string"},
+    {"name": "user_id", "type": "string"},
+    {"name": "country", "type": "string", "default": "undefined"},
+    {"name": "phone", "type": "string"},
+    {"name": "email", "type": "string", "default": ""}
+  ]
+}
+
+
+Recompile Avro classes to regenerate User.java (it now includes email).
+
+Update your producer to set email:
+
+User user1 = User.newBuilder()
+    .setName("Alice3")
+    .setAddress("123 Main Street")
+    .setUserId("u003")
+    .setCountry("FR")
+    .setPhone("123")
+    .setEmail("alice@example.com")
+    .build();
+
+
+Do not change your consumer — it still uses schema V1.
+
+Run producer V2 → sends data using schema version 2.
+Then start the old consumer again.
+
+✅ Observation:
+Consumer reads and prints messages normally, ignoring the email field.
+
+This shows backward compatibility.
+
+🔁 Step 3 — Demonstrate Forward Compatibility
+Goal:
+
+Old producer (V1) sends messages.
+New consumer (V2) can read them.
+
+3.1. Keep the registry mode
+
+Switch to FORWARD:
+
+curl -X PUT http://localhost:8081/config/users-avro-value \
+  -H "Content-Type: application/json" \
+  -d '{"compatibility": "FORWARD"}'
+
+3.2. Use the same V2 schema (with email)
+
+Producer uses schema V1 (no email).
+
+Consumer uses schema V2 (expects email).
+
+Run:
+
+# Producer (old)
+mvn compile exec:java -Dexec.mainClass=com.sd.kafka.schema_registry.UserProducer
+
+# Consumer (new, compiled with user_v2.avsc)
+mvn compile exec:java -Dexec.mainClass=com.sd.kafka.schema_registry.UserConsumer
+
+
+✅ Observation:
+Consumer reads messages correctly. The email field shows as empty ("") because the default value is used.
+
+This demonstrates forward compatibility.
+
+💣 Step 4 — Show a Breaking Change
+
+Modify schema to break compatibility:
+
+user_v3.avsc
+
+{
+  "namespace": "com.sd.kafka.avro",
+  "type": "record",
+  "name": "User",
+  "fields": [
+    {"name": "name", "type": "string"},
+    {"name": "address", "type": "string"},
+    {"name": "user_id", "type": "int"},
+    {"name": "country", "type": "string", "default": "undefined"},
+    {"name": "phone", "type": "string"}
+  ]
+}
+
+
+Now run:
+
+curl -X POST http://localhost:8081/compatibility/subjects/users-avro-value/versions/latest \
+  -H "Content-Type: application/json" \
+  -d @"user_v3.avsc"
+
+
+❌ Expected output:
+
+{"is_compatible":false}
+
+
+If you try to produce using this schema while compatibility is BACKWARD, Schema Registry rejects it.
+
+🧠 Step 5 — Wrap-up Discussion for Students
+Scenario	Change	Result	Why
+Add field with default	V1 → V2	✅ Works (Backward)	Default fills missing data
+Old consumer reads new messages	V2 → V1	✅ Works (Backward)	Extra field ignored
+Remove field with default	V2 → V3	✅ Works (Forward)	Defaults preserve schema
+Change field type	V1 → V3	❌ Breaks	Incompatible binary encoding
