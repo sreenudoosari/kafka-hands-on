@@ -1,0 +1,62 @@
+Objectifs : Déverser le topic position dans un index ElasticSearch
+=> Installation du plugin ElasticSearch dans kafka connect
+Visualiser le fichier Dockerfile fourni et construire une image my-kafka-connect-with-elasticsearch via :
+docker build -t my-kafka-connect-with-elasticsearch .
+
+=> Démarrage de la stack 
+
+Démarrer la nouvelle stack qui ajoute l’image précédemment construite, ElasticSearch et Kibana
+docker-compose up -d
+Vérifier l’installation du plugin via :
+http://localhost:8083/connector-plugins
+Se connecter à kibana localhost :5601 et dans la DevConsole exécuter :
+PUT /mylogs
+{
+    "mappings":{
+        "properties": {
+            "@timestamp": {
+                "type": "date",
+                "format": "epoch_millis"
+            }
+        }
+    }
+}
+
+
+La commande crée un index elasticsearch mylogs avec pour l’instant un seul champ @timestamp
+5.3 Configuration du connecteur
+Définir un connecteur elasticsearch-sink qui déverse le topic mylogs dans l’index mylogs :
+curl -X POST http://localhost:8083/connectors \
+-H "Content-Type: application/json" \
+-d '{
+"name": "elasticsearch-sink",
+"config": {
+"connector.class":
+"io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+"tasks.max": "1",
+"topics": "mylogs",
+"topic.index.map": "mylogs:mylogs_index",
+"connection.url": "http://elasticsearch:9200",
+"type.name": "log",
+"key.ignore": "true",
+"schema.ignore": "true",
+ "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "key.converter.schemas.enable": "false",
+    "value.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter.schemas.enable": "false"
+}
+}'
+
+Vous pouvez vérifier la bonne installation du connecteur :
+•
+Via les logs de KafkaConnect
+•
+Via http://localhost:8083 /connectors : Liste des connecteurs actifs
+•
+Via l’interface de RedPanda
+Alimenter le topic position
+Vous pouvez visualiser les effets du connecteur
+•
+Via ElasticSearch : http://localhost:9200/position/_search
+•
+Via Kibana : http://localhost:5601
