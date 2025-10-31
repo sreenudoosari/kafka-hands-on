@@ -1,0 +1,200 @@
+version: '3.8'
+
+services:
+  # === EXISTING KAFKA CLUSTER (unchanged) ===
+  kafka-0:
+    image: confluentinc/cp-kafka:8.1.0
+    container_name: kafka-0
+    ports:
+      - "9092"
+      - "19092:19092"
+    environment:
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_NODE_ID=0
+      - KAFKA_PROCESS_ROLES=controller,broker
+      - KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CONTROLLER_QUORUM_VOTERS=0@kafka-0:9093,1@kafka-1:9093,2@kafka-2:9093
+      - KAFKA_KRAFT_CLUSTER_ID=abcdefghijklmnopqrstuv
+      - KAFKA_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:19092
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka-0:9092,EXTERNAL://localhost:19092
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
+    volumes:
+      - kafka_0_data:/confluentinc/kafka
+    networks:
+      - kafka-cluster
+
+  kafka-1:
+    image: confluentinc/cp-kafka:8.1.0
+    container_name: kafka-1
+    ports:
+      - "19093:19093"
+    environment:
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_NODE_ID=1
+      - KAFKA_PROCESS_ROLES=controller,broker
+      - KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CONTROLLER_QUORUM_VOTERS=0@kafka-0:9093,1@kafka-1:9093,2@kafka-2:9093
+      - KAFKA_KRAFT_CLUSTER_ID=abcdefghijklmnopqrstuv
+      - KAFKA_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:19093
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka-1:9092,EXTERNAL://localhost:19093
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
+    volumes:
+      - kafka_1_data:/confluentinc/kafka
+    networks:
+      - kafka-cluster
+
+  kafka-2:
+    image: confluentinc/cp-kafka:8.1.0
+    container_name: kafka-2
+    ports:
+      - "19094:19094"
+    environment:
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_NODE_ID=2
+      - KAFKA_PROCESS_ROLES=controller,broker
+      - KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CONTROLLER_QUORUM_VOTERS=0@kafka-0:9093,1@kafka-1:9093,2@kafka-2:9093
+      - KAFKA_KRAFT_CLUSTER_ID=abcdefghijklmnopqrstuv
+      - KAFKA_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:19094
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka-2:9092,EXTERNAL://localhost:19094
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
+    volumes:
+      - kafka_2_data:/confluentinc/kafka
+    networks:
+      - kafka-cluster
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:8.1.0
+    container_name: schema-registry
+    ports:
+      - "8081:8085"
+    restart: unless-stopped
+    depends_on:
+      - kafka-0
+      - kafka-1
+      - kafka-2
+    environment:
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'PLAINTEXT://kafka-0:9092,PLAINTEXT://kafka-1:9092'
+      SCHEMA_REGISTRY_HOST_NAME: 'schema-registry'
+      SCHEMA_REGISTRY_LISTENERS: 'http://0.0.0.0:8085'
+      SCHEMA_REGISTRY_LOG4J_ROOT_LOGLEVEL: 'INFO'
+    networks:
+      - kafka-cluster
+
+  redpanda:
+    image: redpandadata/console:v3.2.2
+    container_name: redpanda
+    ports:
+      - 9090:8080
+    environment:
+      - KAFKA_BROKERS=kafka-0:9092,kafka-1:9092,kafka-2:9092
+      - KAFKA_SCHEMAREGISTRY_ENABLED=true
+      - SCHEMAREGISTRY_ENABLED=true
+      - KAFKA_SCHEMAREGISTRY_URLS=http://schema-registry:8085
+    depends_on:
+      - kafka-0
+      - kafka-1
+      - kafka-2
+      - schema-registry
+    networks:
+      - kafka-cluster
+
+  akhq:
+    image: tchiotludo/akhq:0.26.0
+    container_name: akhq
+    ports:
+      - 8080:8080
+    environment:
+      AKHQ_CONFIGURATION: |
+        akhq:
+          connections:
+            docker-kafka-server:
+              properties:
+                bootstrap.servers: "kafka-0:9092,kafka-1:9092,kafka-2:9092"
+              schema-registry:
+                url: "http://schema-registry:8085"
+    depends_on:
+      - schema-registry
+    networks:
+      - kafka-cluster
+
+  # === POSTGRES DATABASE ===
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: kafka
+      POSTGRES_PASSWORD: kafka
+      POSTGRES_DB: testdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - kafka-cluster
+
+  # === PGADMIN FOR WEB UI ===
+  pgadmin:
+    image: dpage/pgadmin4:8.5
+    container_name: pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - kafka-cluster
+
+  # === KAFKA CONNECT WITH JDBC PLUGIN ===
+  kafka-connect:
+    image: confluentinc/cp-kafka-connect:8.1.0
+    container_name: kafka-connect
+    ports:
+      - "8083:8083"
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: "kafka-0:9092,kafka-1:9092,kafka-2:9092"
+      CONNECT_REST_ADVERTISED_HOST_NAME: kafka-connect
+      CONNECT_GROUP_ID: "connect-cluster"
+      CONNECT_CONFIG_STORAGE_TOPIC: connect-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: connect-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: connect-status
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/confluent-hub-components"
+      CONNECT_LOG4J_ROOT_LOGLEVEL: "INFO"
+      CONNECT_REST_PORT: 8083
+      # JDBC Connector
+      CONNECT_JDBC_DRIVER_DIR: /usr/share/java/kafka-connect-jdbc
+    depends_on:
+      - kafka-0
+      - kafka-1
+      - kafka-2
+      - postgres
+    volumes:
+      - ./plugins:/usr/share/confluent-hub-components
+    networks:
+      - kafka-cluster
+    command:
+      - bash
+      - -c
+      - |
+        confluent-hub install --no-prompt confluentinc/kafka-connect-jdbc:10.7.4
+        /etc/confluent/docker/run
+
+volumes:
+  kafka_0_data:
+  kafka_1_data:
+  kafka_2_data:
+  postgres_data:
+
+networks:
+  kafka-cluster:

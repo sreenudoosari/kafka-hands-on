@@ -1,0 +1,106 @@
+  ✅ Example JDBC Source Connector (Postgres → Kafka)
+
+  Save as postgres-source.json:
+
+  {
+    "name": "postgres-source",
+    "config": {
+      "connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
+      "connection.url": "jdbc:postgresql://postgres:5432/testdb",
+      "connection.user": "kafka",
+      "connection.password": "kafka",
+      "mode": "incrementing",
+      "incrementing.column.name": "id",
+      "topic.prefix": "pg-",
+      "poll.interval.ms": "10000",
+      "table.whitelist": "users"
+    }
+  }
+
+
+  Create the connector:
+
+  curl -X POST -H "Content-Type: application/json" \
+    --data @postgres-source.json \
+    http://localhost:8083/connectors
+
+
+✅ Example SQL to test
+
+Connect to Postgres (localhost:5432, user kafka, pass kafka):
+
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(50),
+  email VARCHAR(100)
+);
+
+INSERT INTO users (name, email)
+VALUES ('Alice', 'alice@example.com'),
+       ('Bob', 'bob@example.com');
+
+
+Messages will appear in Kafka topic pg-users.
+
+✅ Example JDBC Sink Connector (Kafka → Postgres)
+
+Save this as postgres-sink.json:
+
+{
+  "name": "postgres-sink",
+  "config": {
+    "connector.class": "io.confluent.connect.jdbc.JdbcSinkConnector",
+    "connection.url": "jdbc:postgresql://postgres:5432/testdb",
+    "connection.user": "kafka",
+    "connection.password": "kafka",
+    "topics": "pg-users",
+    "auto.create": "true",
+    "auto.evolve": "true",
+    "insert.mode": "upsert",
+    "pk.mode": "record_value",
+    "pk.fields": "id",
+    "table.name.format": "users_copy"
+  }
+}
+
+✅ Create Sink Connector
+
+Run from your host after containers are up:
+
+curl -X POST -H "Content-Type: application/json" \
+  --data @postgres-sink.json \
+  http://localhost:8083/connectors
+
+✅ Behavior
+
+The source connector reads rows from users and sends them to Kafka topic pg-users.
+
+The sink connector consumes from pg-users and writes to PostgreSQL table users_copy.
+
+If the table doesn’t exist, it will be created automatically (auto.create=true).
+
+Schema changes in Kafka messages are reflected (auto.evolve=true).
+
+Primary key is id.
+
+✅ Verify Results
+
+Open pgAdmin (http://localhost:5050
+, user admin@admin.com, password admin).
+
+Add server connection:
+
+Host: postgres
+
+Port: 5432
+
+User: kafka
+
+Password: kafka
+
+Then query:
+
+SELECT * FROM users_copy;
+
+
+You should see the same rows as in users.
