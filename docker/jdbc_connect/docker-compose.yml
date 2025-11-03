@@ -187,7 +187,7 @@ services:
       - bash
       - -c
       - |
-        confluent-hub install --no-prompt confluentinc/kafka-connect-jdbc:10.7.4
+        confluent-hub install --no-prompt confluentinc/kafka-connect-jdbc:latest
         /etc/confluent/docker/run
 
 volumes:
