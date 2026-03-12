@@ -14,10 +14,10 @@ import org.apache.avro.message.SchemaStore;
 
 @org.apache.avro.specific.AvroGenerated
 public class User extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  private static final long serialVersionUID = 4772499762325980776L;
+  private static final long serialVersionUID = 1554304153885755308L;
 
 
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"User\",\"namespace\":\"com.sd.kafka.avro\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"address\",\"type\":\"string\"},{\"name\":\"user_id\",\"type\":\"string\"},{\"name\":\"country\",\"type\":\"string\",\"default\":\"undefined\"},{\"name\":\"phone\",\"type\":\"string\"}]}");
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"User\",\"namespace\":\"com.sd.kafka.avro\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"address\",\"type\":\"string\"},{\"name\":\"user_id\",\"type\":\"string\"},{\"name\":\"country\",\"type\":\"string\",\"default\":\"undefined\"},{\"name\":\"phone\",\"type\":\"string\"},{\"name\":\"email\",\"type\":\"string\",\"default\":\"undefined\"}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
 
   private static final SpecificData MODEL$ = new SpecificData();
@@ -78,6 +78,7 @@ public class User extends org.apache.avro.specific.SpecificRecordBase implements
   private java.lang.CharSequence user_id;
   private java.lang.CharSequence country;
   private java.lang.CharSequence phone;
+  private java.lang.CharSequence email;
 
   /**
    * Default constructor.  Note that this does not initialize fields
@@ -93,13 +94,15 @@ public class User extends org.apache.avro.specific.SpecificRecordBase implements
    * @param user_id The new value for user_id
    * @param country The new value for country
    * @param phone The new value for phone
+   * @param email The new value for email
    */
-  public User(java.lang.CharSequence name, java.lang.CharSequence address, java.lang.CharSequence user_id, java.lang.CharSequence country, java.lang.CharSequence phone) {
+  public User(java.lang.CharSequence name, java.lang.CharSequence address, java.lang.CharSequence user_id, java.lang.CharSequence country, java.lang.CharSequence phone, java.lang.CharSequence email) {
     this.name = name;
     this.address = address;
     this.user_id = user_id;
     this.country = country;
     this.phone = phone;
+    this.email = email;
   }
 
   @Override
@@ -117,6 +120,7 @@ public class User extends org.apache.avro.specific.SpecificRecordBase implements
     case 2: return user_id;
     case 3: return country;
     case 4: return phone;
+    case 5: return email;
     default: throw new IndexOutOfBoundsException("Invalid index: " + field$);
     }
   }
@@ -131,6 +135,7 @@ public class User extends org.apache.avro.specific.SpecificRecordBase implements
     case 2: user_id = (java.lang.CharSequence)value$; break;
     case 3: country = (java.lang.CharSequence)value$; break;
     case 4: phone = (java.lang.CharSequence)value$; break;
+    case 5: email = (java.lang.CharSequence)value$; break;
     default: throw new IndexOutOfBoundsException("Invalid index: " + field$);
     }
   }
@@ -221,6 +226,23 @@ public class User extends org.apache.avro.specific.SpecificRecordBase implements
   }
 
   /**
+   * Gets the value of the 'email' field.
+   * @return The value of the 'email' field.
+   */
+  public java.lang.CharSequence getEmail() {
+    return email;
+  }
+
+
+  /**
+   * Sets the value of the 'email' field.
+   * @param value the value to set.
+   */
+  public void setEmail(java.lang.CharSequence value) {
+    this.email = value;
+  }
+
+  /**
    * Creates a new User RecordBuilder.
    * @return A new User RecordBuilder
    */
@@ -266,6 +288,7 @@ public class User extends org.apache.avro.specific.SpecificRecordBase implements
     private java.lang.CharSequence user_id;
     private java.lang.CharSequence country;
     private java.lang.CharSequence phone;
+    private java.lang.CharSequence email;
 
     /** Creates a new Builder */
     private Builder() {
@@ -298,6 +321,10 @@ public class User extends org.apache.avro.specific.SpecificRecordBase implements
         this.phone = data().deepCopy(fields()[4].schema(), other.phone);
         fieldSetFlags()[4] = other.fieldSetFlags()[4];
       }
+      if (isValidValue(fields()[5], other.email)) {
+        this.email = data().deepCopy(fields()[5].schema(), other.email);
+        fieldSetFlags()[5] = other.fieldSetFlags()[5];
+      }
     }
 
     /**
@@ -325,6 +352,10 @@ public class User extends org.apache.avro.specific.SpecificRecordBase implements
       if (isValidValue(fields()[4], other.phone)) {
         this.phone = data().deepCopy(fields()[4].schema(), other.phone);
         fieldSetFlags()[4] = true;
+      }
+      if (isValidValue(fields()[5], other.email)) {
+        this.email = data().deepCopy(fields()[5].schema(), other.email);
+        fieldSetFlags()[5] = true;
       }
     }
 
@@ -528,6 +559,46 @@ public class User extends org.apache.avro.specific.SpecificRecordBase implements
       return this;
     }
 
+    /**
+      * Gets the value of the 'email' field.
+      * @return The value.
+      */
+    public java.lang.CharSequence getEmail() {
+      return email;
+    }
+
+
+    /**
+      * Sets the value of the 'email' field.
+      * @param value The value of 'email'.
+      * @return This builder.
+      */
+    public com.sd.kafka.avro.User.Builder setEmail(java.lang.CharSequence value) {
+      validate(fields()[5], value);
+      this.email = value;
+      fieldSetFlags()[5] = true;
+      return this;
+    }
+
+    /**
+      * Checks whether the 'email' field has been set.
+      * @return True if the 'email' field has been set, false otherwise.
+      */
+    public boolean hasEmail() {
+      return fieldSetFlags()[5];
+    }
+
+
+    /**
+      * Clears the value of the 'email' field.
+      * @return This builder.
+      */
+    public com.sd.kafka.avro.User.Builder clearEmail() {
+      email = null;
+      fieldSetFlags()[5] = false;
+      return this;
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public User build() {
@@ -538,6 +609,7 @@ public class User extends org.apache.avro.specific.SpecificRecordBase implements
         record.user_id = fieldSetFlags()[2] ? this.user_id : (java.lang.CharSequence) defaultValue(fields()[2]);
         record.country = fieldSetFlags()[3] ? this.country : (java.lang.CharSequence) defaultValue(fields()[3]);
         record.phone = fieldSetFlags()[4] ? this.phone : (java.lang.CharSequence) defaultValue(fields()[4]);
+        record.email = fieldSetFlags()[5] ? this.email : (java.lang.CharSequence) defaultValue(fields()[5]);
         return record;
       } catch (org.apache.avro.AvroMissingFieldException e) {
         throw e;
@@ -580,6 +652,8 @@ public class User extends org.apache.avro.specific.SpecificRecordBase implements
 
     out.writeString(this.phone);
 
+    out.writeString(this.email);
+
   }
 
   @Override public void customDecode(org.apache.avro.io.ResolvingDecoder in)
@@ -597,8 +671,10 @@ public class User extends org.apache.avro.specific.SpecificRecordBase implements
 
       this.phone = in.readString(this.phone instanceof Utf8 ? (Utf8)this.phone : null);
 
+      this.email = in.readString(this.email instanceof Utf8 ? (Utf8)this.email : null);
+
     } else {
-      for (int i = 0; i < 5; i++) {
+      for (int i = 0; i < 6; i++) {
         switch (fieldOrder[i].pos()) {
         case 0:
           this.name = in.readString(this.name instanceof Utf8 ? (Utf8)this.name : null);
@@ -618,6 +694,10 @@ public class User extends org.apache.avro.specific.SpecificRecordBase implements
 
         case 4:
           this.phone = in.readString(this.phone instanceof Utf8 ? (Utf8)this.phone : null);
+          break;
+
+        case 5:
+          this.email = in.readString(this.email instanceof Utf8 ? (Utf8)this.email : null);
           break;
 
         default:

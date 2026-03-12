@@ -1,3 +1,35 @@
+Producer
+   |
+   | 1. Serialize User object
+   |
+   |----> KafkaAvroSerializer
+   |          |
+   |          | register schema
+   |          v
+   |     Schema Registry
+   |          |
+   |          | schemaId = 1
+   |          v
+   |
+Kafka Topic
+(users-avro)
+   |
+   | message contains:
+   | [magic byte][schema id][avro data]
+   |
+Consumer
+   |
+   |----> KafkaAvroDeserializer
+              |
+              | read schema id
+              v
+        Schema Registry
+              |
+              | GET schema id 1
+              v
+        Deserialize → User object
+
+
 All commands assume Confluent Platform is running locally:
 
 Kafka broker: localhost:19092
@@ -43,8 +75,8 @@ Compile this schema (via your Avro plugin or avro-tools) to generate User.java.
 
 Run your existing UserProducer and UserConsumer to verify the topic works:
 
-mvn compile exec:java -Dexec.mainClass=com.sd.kafka.schema_registry.UserProducer
-mvn compile exec:java -Dexec.mainClass=com.sd.kafka.schema_registry.UserConsumer
+mvn compile exec:java -Dexec.mainClass=com.sd.kafka.schema.UserProducer
+mvn compile exec:java -Dexec.mainClass=com.sd.kafka.schema.UserConsumer
 
 
 Output should show your two user records consumed successfully.

@@ -1,4 +1,4 @@
-package com.sd.kafka.schema_registry;
+package com.sd.kafka.schema;
 
 import com.sd.kafka.avro.User;
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;

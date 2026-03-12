@@ -3,6 +3,7 @@
 #Send message via CLI
 docker exec -it kafka-1 bash
 /usr/bin/kafka-topics --create --topic test-topic --bootstrap-server kafka-1:9092
+ /usr/bin/kafka-topics --create --topic test-topic --bootstrap-server kafka-1:9092 --partitions 3
 /usr/bin/kafka-console-producer --topic test-topic --bootstrap-server kafka-1:9092
 
 #Produce with key and value:
@@ -11,7 +12,9 @@ docker exec -it kafka-1 bash
 #CONSUMER COMMANDS:
 /usr/bin/kafka-console-consumer --bootstrap-server kafka-1:9092  --topic test-topic --from-beginning
 
-#Consumer with key and value:
+/usr/bin/kafka-console-consumer --bootstrap-server kafka-1:9092  --topic test-topic --from-beginning  --property print.key=true --property print.partition=true
+
+#Consumer with key and value with the separator
 /usr/bin/kafka-console-consumer --bootstrap-server kafka-1:9092  --topic test-topic --from-beginning  --property print.key=true --property key.separator=:
 
 #TOPIC commands:

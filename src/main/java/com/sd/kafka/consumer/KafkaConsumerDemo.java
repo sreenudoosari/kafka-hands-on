@@ -13,7 +13,7 @@ public class KafkaConsumerDemo {
 
     public static void main(String[] args) {
         Properties props = getProperties();
-        String topicName = "test_topic";
+        String topicName = "my_topic";
         try(KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props)) {
             consumer.subscribe(List.of(topicName));
             System.out.println("Consumer 1, Consuming messages from :"+topicName);

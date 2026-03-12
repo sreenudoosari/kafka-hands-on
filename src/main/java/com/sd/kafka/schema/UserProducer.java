@@ -1,4 +1,4 @@
-package com.sd.kafka.schema_registry;
+package com.sd.kafka.schema;
 
 import com.sd.kafka.avro.User;
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
@@ -8,6 +8,7 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.streams.StreamsConfig;
 
 import java.util.Properties;
+import java.util.UUID;
 
 public class UserProducer {
 
@@ -22,7 +23,7 @@ public class UserProducer {
 
         // Create example User objects
         User user1 = User.newBuilder()
-                .setName("Alice2")
+                .setName("Alice "+ UUID.randomUUID().toString())
                 .setAddress("123 Main Street")
                 .setUserId("u0012")
                 .setCountry("FR")
@@ -30,7 +31,7 @@ public class UserProducer {
                 .build();
 
         User user2 = User.newBuilder()
-                .setName("Bob2")
+                .setName("Bob "+ UUID.randomUUID().toString())
                 .setAddress("456 Second Avenue")
                 .setUserId("u0022")
                 .setCountry("US")
@@ -39,8 +40,8 @@ public class UserProducer {
 
         try (KafkaProducer<String, User> producer = new KafkaProducer<>(properties)) {
             // Send records
-            producer.send(new ProducerRecord<>(topic, user1.getUserId().toString(), user1));
-            producer.send(new ProducerRecord<>(topic, user2.getUserId().toString(), user2));
+            producer.send(new ProducerRecord<>(topic, user1.getUserId()+"test" , user1));
+            producer.send(new ProducerRecord<>(topic, user2.getUserId()+"test", user2));
             producer.flush();
             System.out.println("Sent User records to topic " + topic);
         } catch (Exception e) {

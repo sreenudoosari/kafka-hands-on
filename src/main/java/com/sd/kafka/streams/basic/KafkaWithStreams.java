@@ -14,8 +14,8 @@ public class KafkaWithStreams {
         Properties props = new Properties();
         props.put(StreamsConfig.APPLICATION_ID_CONFIG, "widget-stream-app2");
         props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:19092");
-        props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
-        props.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG, Serdes.String().getClass());
+       // props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
+      //  props.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG, Serdes.String().getClass());
         // Custom Serdes
         var stringSerde = Serdes.String();
         var widgetSerde = new WidgetSerde();

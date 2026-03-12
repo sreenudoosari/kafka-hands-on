@@ -10,27 +10,103 @@ import org.apache.kafka.streams.*;
 import org.apache.kafka.streams.kstream.*;
 
 /*
-Input data
+Step 1: Start your Kafka / Redpanda cluster
 
-Topic: products
+Make sure your Kafka or Redpanda cluster is running on:
 
-Key=P1, Value=Phone
-Key=P2, Value=TV
+localhost:19092
+Step 2: Create the topics
 
-Topic: orders
-Key=P1, Value=Order#101
-Key=P2, Value=Order#102
+You need three topics:
 
-Output: enriched-orders
-Key=P1, Value=Order=Order#101, Product=Phone
-Key=P2, Value=Order=Order#102, Product=TV
+products – KTable reference data
 
-Concept	Demonstrated
-KTable	Keeps latest product per key
-KStream	Represents continuous order events
-Join	Stream-table join for enrichment
-Local state	Products table stored as a StateStore
-Output	New topic with enriched results
+orders – KStream events
+
+enriched-orders – output topic
+
+Use the Kafka CLI:
+
+# Products topic
+kafka-topics --create --topic products --bootstrap-server localhost:19092 --partitions 1 --replication-factor 1
+
+# Orders topic
+kafka-topics --create --topic orders --bootstrap-server localhost:19092 --partitions 1 --replication-factor 1
+
+# Enriched orders topic
+kafka-topics --create --topic enriched-orders --bootstrap-server localhost:19092 --partitions 1 --replication-factor 1
+Step 3: Produce initial data for the KTable
+
+KTable reflects the latest value per key. Produce initial products:
+
+kafka-console-producer --topic products --bootstrap-server localhost:19092 --property parse.key=true --property key.separator=,
+
+Type:
+
+P1,Phone
+P2,TV
+
+Step 4: Produce data for the KStream
+
+Produce some orders events:
+
+kafka-console-producer --topic orders --bootstrap-server localhost:19092 --property parse.key=true --property key.separator=,
+
+Type:
+
+P1,Order#101
+P2,Order#102
+
+Step 6: Run the Kafka Streams application
+
+Compile and run:
+
+mvn compile exec:java -Dexec.mainClass="com.sd.kafka.ktable.KTableProductsOrdersDemo"
+
+Or run directly from your IDE.
+
+The app will load products as a KTable.
+
+orders as a KStream.
+
+Join them to create enriched-orders.
+
+Print the KTable state via toStream().foreach().
+
+Step 7: Verify enriched output
+
+Consume enriched-orders:
+
+kafka-console-consumer --topic enriched-orders --bootstrap-server localhost:19092 --from-beginning --property print.key=true --property key.separator=,
+
+Expected output:
+
+P1,Order=Order#101, Product=Phone
+P2,Order=Order#102, Product=TV
+Step 8: Demonstrate KTable updating only latest values
+
+Produce a product update:
+
+P1,Smartphone
+
+Produce a new order:
+
+P1,Order#103
+
+Observe:
+
+Console prints the updated KTable state:
+
+KTable current state: P1 -> Smartphone
+
+Output in enriched-orders:
+
+P1,Order=Order#103, Product=Smartphone
+
+Key concept: The KTable always holds the latest value per key, even if multiple updates happen.
+
+
+
 
  */
 public class KTableProductsOrdersDemo {
@@ -46,6 +122,11 @@ public class KTableProductsOrdersDemo {
         // KTable for product reference data
         KTable<String, String> products = builder.table("products");
         System.out.println("got products");
+        // Print current KTable values whenever they change
+        products.toStream()
+                .foreach((key, value) ->
+                        System.out.println("KTable current state: " + key + " -> " + value)
+                );
         // KStream for order events
         KStream<String, String> orders = builder.stream("orders");
         System.out.println("got orders");
