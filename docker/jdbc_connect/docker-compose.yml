@@ -91,6 +91,7 @@ services:
       - KAFKA_SCHEMAREGISTRY_ENABLED=true
       - SCHEMAREGISTRY_ENABLED=true
       - KAFKA_SCHEMAREGISTRY_URLS=http://schema-registry:8085
+      - SCHEMAREGISTRY_URLS=http://schema-registry:8085
     depends_on:
       - kafka-0
       - kafka-1
