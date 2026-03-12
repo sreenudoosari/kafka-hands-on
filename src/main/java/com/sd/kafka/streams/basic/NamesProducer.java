@@ -19,9 +19,9 @@ public class NamesProducer {
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
 
         List<String> names = List.of(
-                "alice" + RandomStringUtils.randomAlphabetic(4),
+                " vlad put" + RandomStringUtils.randomAlphabetic(4),
                 "bob"+ RandomStringUtils.randomAlphabetic(4),
-                "charlie"+RandomStringUtils.randomAlphabetic(4)
+                "vlad putin charlie"+RandomStringUtils.randomAlphabetic(4)
         );
 
         try (KafkaProducer<String, String> producer = new KafkaProducer<>(props)) {

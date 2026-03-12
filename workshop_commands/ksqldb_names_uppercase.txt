@@ -1,0 +1,184 @@
+
+Démarrer la stack avec le docker compose fourni.
+Ensuite, démarrer une console interactive ksql-cli
+
+//in the below command  ksql is the CLI executable inside the container 'ksqldb-cli'
+
+docker exec -it ksqldb-cli ksql http://ksqldb-server:8088
+
+INFO : 
+Push query: continuous, uses EMIT CHANGES, streams live updates.
+Pull query: one-time lookup, returns current table state.
+
+
+Hands-on ksqlDB use case — showing both push and pull queries clearly.
+
+🎯 Goal
+
+Simulate real-time product orders and compute the total quantity sold per product using:
+
+a stream for incoming orders,
+
+a table that aggregates totals,
+
+push queries (continuous updates),
+
+pull queries (on-demand lookups).
+
+🧱 Step 1 — Create the input stream
+
+Run this inside the KSQL CLI:
+
+CREATE STREAM names_stream (
+    name VARCHAR
+) WITH (
+    KAFKA_TOPIC='names',
+    VALUE_FORMAT='JSON',
+    PARTITIONS=1
+);
+
+
+This tells ksqlDB to consume the orders topic as a stream of events.
+
+🧪 Step 2 — Produce sample orders
+
+From another terminal (or use the KSQL INSERT INTO command):
+
+INSERT INTO names_stream (name) VALUES ('alice');
+INSERT INTO names_stream (name) VALUES ('bob');
+INSERT INTO names_stream (name) VALUES ('david');
+
+
+Now the topic orders has events coming in.
+
+📊 Step 3 — Create an aggregation table
+
+Group by product and compute total quantity sold.
+
+CREATE TABLE product_totals AS
+SELECT
+  product_id,
+  SUM(quantity) AS total_quantity
+FROM orders
+GROUP BY product_id
+EMIT CHANGES;
+
+
+This creates:
+
+A KTable called PRODUCT_TOTALS
+
+Backed by a Kafka topic
+
+Continuously updated as new orders arrive
+
+⚡ Step 4 — Demonstrate a push query (live updates)
+SELECT * FROM product_totals EMIT CHANGES;
+
+
+This continuously outputs updates as the table changes:
+
++-----------+---------------+
+| PRODUCT_ID| TOTAL_QUANTITY|
++-----------+---------------+
+| p1        | 2             |
+| p2        | 5             |
+| p1        | 5             |  <-- updated total
+
+
+Push = continuous stream of changes.
+
+🔍 Step 5 — Demonstrate a pull query (point lookup)
+
+After data has accumulated, run:
+
+SELECT * FROM product_totals WHERE product_id='p1';
+
+
+You get an instant lookup of the latest value:
+
++-----------+---------------+
+| PRODUCT_ID| TOTAL_QUANTITY|
++-----------+---------------+
+| p1        | 5             |
+
+
+Pull = current state snapshot (query once).
+
+🧩 Concept summary
+Query Type	Syntax	Behavior
+Push query	SELECT ... EMIT CHANGES;	Continuous, event-driven
+Pull query	SELECT ... WHERE key=...;	One-time lookup, returns current table state
+
+
+IF no data is shown : 
+
+That happens when either:
+
+No records were inserted into the source stream (orders), or
+
+The CREATE TABLE didn’t receive any data after it was created (the aggregation only starts from new incoming records, not existing topic data).
+
+✅ Fix in 3 steps
+1. Verify that the orders stream works
+
+Run:
+
+SHOW STREAMS;
+
+
+You should see ORDERS.
+
+Then check if it receives records:
+
+SELECT * FROM orders EMIT CHANGES;
+
+
+If it shows nothing, it means no events exist in the orders topic.
+
+2. Insert test data again
+
+Run inside the KSQL CLI:
+
+INSERT INTO orders (order_id, product_id, quantity) VALUES ('o1', 'p1', 2);
+INSERT INTO orders (order_id, product_id, quantity) VALUES ('o2', 'p2', 5);
+INSERT INTO orders (order_id, product_id, quantity) VALUES ('o3', 'p1', 3);
+
+
+Now data will flow into the orders stream.
+
+3. Re-run the aggregation
+
+The table product_totals listens for new events only.
+So after inserting, re-check:
+
+SELECT * FROM product_totals EMIT CHANGES;
+
+
+You should now see:
+
++-----------+---------------+
+| PRODUCT_ID| TOTAL_QUANTITY|
++-----------+---------------+
+| p1        | 2             |
+| p2        | 5             |
+| p1        | 5             |
+
+
+And the pull query will now work:
+
+SELECT * FROM product_totals WHERE product_id='p1';
+
+
+Output:
+
++-----------+---------------+
+| PRODUCT_ID| TOTAL_QUANTITY|
++-----------+---------------+
+| p1        | 5             |
+
+⚙️ Important behavior
+
+CREATE TABLE ... AS SELECT ... EMIT CHANGES only captures future events from the source stream.
+
+To recompute from existing topic data, you must drop and recreate the table after data is available, or replay topic messages.
