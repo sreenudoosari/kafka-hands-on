@@ -63,23 +63,6 @@ services:
     networks:
       - kafka-cluster
 
-  schema-registry:
-    image: confluentinc/cp-schema-registry:8.1.0
-    container_name: schema-registry
-    ports:
-      - "8081:8085"
-    restart: unless-stopped
-    depends_on:
-      - kafka-0
-      - kafka-1
-      - kafka-2
-    environment:
-      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'PLAINTEXT://kafka-0:9092,PLAINTEXT://kafka-1:9092'
-      SCHEMA_REGISTRY_HOST_NAME: 'schema-registry'
-      SCHEMA_REGISTRY_LISTENERS: 'http://0.0.0.0:8085'
-      SCHEMA_REGISTRY_LOG4J_ROOT_LOGLEVEL: 'INFO'
-    networks:
-      - kafka-cluster
 
   redpanda:
     image: redpandadata/console:v3.2.2
@@ -88,34 +71,10 @@ services:
       - 9090:8080
     environment:
       - KAFKA_BROKERS=kafka-0:9092,kafka-1:9092,kafka-2:9092
-      - KAFKA_SCHEMAREGISTRY_ENABLED=true
-      - SCHEMAREGISTRY_ENABLED=true
-      - KAFKA_SCHEMAREGISTRY_URLS=http://schema-registry:8085
-      - SCHEMAREGISTRY_URLS=http://schema-registry:8085
     depends_on:
       - kafka-0
       - kafka-1
       - kafka-2
-      - schema-registry
-    networks:
-      - kafka-cluster
-
-  akhq:
-    image: tchiotludo/akhq:0.26.0
-    container_name: akhq
-    ports:
-      - 8080:8080
-    environment:
-      AKHQ_CONFIGURATION: |
-        akhq:
-          connections:
-            docker-kafka-server:
-              properties:
-                bootstrap.servers: "kafka-0:9092,kafka-1:9092,kafka-2:9092"
-              schema-registry:
-                url: "http://schema-registry:8085"
-    depends_on:
-      - schema-registry
     networks:
       - kafka-cluster
 
