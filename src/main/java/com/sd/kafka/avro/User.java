@@ -17,7 +17,7 @@ public class User extends org.apache.avro.specific.SpecificRecordBase implements
   private static final long serialVersionUID = 1554304153885755308L;
 
 
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"User\",\"namespace\":\"com.sd.kafka.avro\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"address\",\"type\":\"string\"},{\"name\":\"user_id\",\"type\":\"string\"},{\"name\":\"country\",\"type\":\"string\",\"default\":\"undefined\"},{\"name\":\"phone\",\"type\":\"string\"},{\"name\":\"email\",\"type\":\"string\",\"default\":\"undefined\"}]}");
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"PGUser\",\"namespace\":\"com.sd.kafka.avro\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"address\",\"type\":\"string\"},{\"name\":\"user_id\",\"type\":\"string\"},{\"name\":\"country\",\"type\":\"string\",\"default\":\"undefined\"},{\"name\":\"phone\",\"type\":\"string\"},{\"name\":\"email\",\"type\":\"string\",\"default\":\"undefined\"}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
 
   private static final SpecificData MODEL$ = new SpecificData();
@@ -54,7 +54,7 @@ public class User extends org.apache.avro.specific.SpecificRecordBase implements
   }
 
   /**
-   * Serializes this User to a ByteBuffer.
+   * Serializes this PGUser to a ByteBuffer.
    * @return a buffer holding the serialized data for this instance
    * @throws java.io.IOException if this instance could not be serialized
    */
@@ -63,9 +63,9 @@ public class User extends org.apache.avro.specific.SpecificRecordBase implements
   }
 
   /**
-   * Deserializes a User from a ByteBuffer.
+   * Deserializes a PGUser from a ByteBuffer.
    * @param b a byte buffer holding serialized data for an instance of this class
-   * @return a User instance decoded from the given buffer
+   * @return a PGUser instance decoded from the given buffer
    * @throws java.io.IOException if the given bytes could not be deserialized into an instance of this class
    */
   public static User fromByteBuffer(
@@ -243,17 +243,17 @@ public class User extends org.apache.avro.specific.SpecificRecordBase implements
   }
 
   /**
-   * Creates a new User RecordBuilder.
-   * @return A new User RecordBuilder
+   * Creates a new PGUser RecordBuilder.
+   * @return A new PGUser RecordBuilder
    */
   public static com.sd.kafka.avro.User.Builder newBuilder() {
     return new com.sd.kafka.avro.User.Builder();
   }
 
   /**
-   * Creates a new User RecordBuilder by copying an existing Builder.
+   * Creates a new PGUser RecordBuilder by copying an existing Builder.
    * @param other The existing builder to copy.
-   * @return A new User RecordBuilder
+   * @return A new PGUser RecordBuilder
    */
   public static com.sd.kafka.avro.User.Builder newBuilder(com.sd.kafka.avro.User.Builder other) {
     if (other == null) {
@@ -264,9 +264,9 @@ public class User extends org.apache.avro.specific.SpecificRecordBase implements
   }
 
   /**
-   * Creates a new User RecordBuilder by copying an existing User instance.
+   * Creates a new PGUser RecordBuilder by copying an existing PGUser instance.
    * @param other The existing instance to copy.
-   * @return A new User RecordBuilder
+   * @return A new PGUser RecordBuilder
    */
   public static com.sd.kafka.avro.User.Builder newBuilder(com.sd.kafka.avro.User other) {
     if (other == null) {
@@ -277,7 +277,7 @@ public class User extends org.apache.avro.specific.SpecificRecordBase implements
   }
 
   /**
-   * RecordBuilder for User instances.
+   * RecordBuilder for PGUser instances.
    */
   @org.apache.avro.specific.AvroGenerated
   public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<User>
@@ -328,7 +328,7 @@ public class User extends org.apache.avro.specific.SpecificRecordBase implements
     }
 
     /**
-     * Creates a Builder by copying an existing User instance
+     * Creates a Builder by copying an existing PGUser instance
      * @param other The existing instance to copy.
      */
     private Builder(com.sd.kafka.avro.User other) {

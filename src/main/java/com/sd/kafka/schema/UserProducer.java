@@ -21,7 +21,7 @@ public class UserProducer {
         properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class);
 
-        // Create example User objects
+        // Create example PGUser objects
         User user1 = User.newBuilder()
                 .setName("Alice "+ UUID.randomUUID().toString())
                 .setAddress("123 Main Street")
@@ -43,7 +43,7 @@ public class UserProducer {
             producer.send(new ProducerRecord<>(topic, user1.getUserId()+"test" , user1));
             producer.send(new ProducerRecord<>(topic, user2.getUserId()+"test", user2));
             producer.flush();
-            System.out.println("Sent User records to topic " + topic);
+            System.out.println("Sent PGUser records to topic " + topic);
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -25,7 +25,7 @@ public class UserConsumer {
         properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, KafkaAvroDeserializer.class);
         properties.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, "http://localhost:8081");
-        // Tell deserializer to return SpecificRecord (User) instead of GenericRecord
+        // Tell deserializer to return SpecificRecord (PGUser) instead of GenericRecord
         properties.put("specific.avro.reader", true);
 
         try (KafkaConsumer<String, User> consumer = new KafkaConsumer<>(properties)) {

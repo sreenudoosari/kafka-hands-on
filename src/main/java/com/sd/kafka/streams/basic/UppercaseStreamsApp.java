@@ -20,7 +20,8 @@ public class UppercaseStreamsApp {
 
         StreamsBuilder builder = new StreamsBuilder();
         KStream<String, String> namesStream = builder.stream("names");
-        KStream<String, String> upperNames = namesStream.mapValues(name -> name.toUpperCase());
+        KStream<String, String> upperNames = namesStream
+                .mapValues(name -> name.toUpperCase());
         upperNames.to("UPPER_names");
 
         KafkaStreams streams =  new KafkaStreams(builder.build(), props);

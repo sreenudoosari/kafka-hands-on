@@ -22,7 +22,7 @@ public class FavoriteColorKTableDemo {
         KTable<String, String> colorTable =  builder.table("user-colors");
         colorTable.toStream()
                 .foreach((key, value) ->
-                        System.out.println("User: " + key + " Color: " + value)
+                        System.out.println("PGUser: " + key + " Color: " + value)
                 );
         KafkaStreams streams =  new KafkaStreams(builder.build(), props);
         streams.start();
